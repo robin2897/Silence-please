@@ -26,7 +26,10 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
+
+
 class MainActivity : FlutterActivity() {
+
     private val channel = "com.inc.rims.silenceplease/database"
     private val tag = MainActivity::class.simpleName
     private val disposable = mutableMapOf<String, Disposable>()
@@ -40,6 +43,7 @@ class MainActivity : FlutterActivity() {
         GeneratedPluginRegistrant.registerWith(this)
         (application as BaseApp).getAppComponent().inject(this)
         val db = DataDatabase.getInstance(this)!!
+        firstRun()
 
         MethodChannel(flutterView, channel).setMethodCallHandler { call, result ->
             val key = call.method
@@ -204,7 +208,7 @@ class MainActivity : FlutterActivity() {
                     val calendar = Calendar.getInstance()
                     val now = Calendar.getInstance()
                     now.timeInMillis = System.currentTimeMillis()
-                    calendar.set(1970, 1, 1, now.get(Calendar.HOUR_OF_DAY),
+                    calendar.set(1970, Calendar.JANUARY, 1, now.get(Calendar.HOUR_OF_DAY),
                             now.get(Calendar.MINUTE))
                     val calMillisecond = calendar.timeInMillis
 
@@ -265,5 +269,17 @@ class MainActivity : FlutterActivity() {
                 v.dispose()
         }
         super.onDestroy()
+    }
+
+    @SuppressLint("ApplySharedPref")
+    private fun firstRun() {
+        val isFirst = getSharedPreferences("FlutterSharedPreferences", 0)
+                .getBoolean("isFirst", true)
+        if (isFirst) {
+            getSharedPreferences("FlutterSharedPreferences", 0).edit()
+                    .putBoolean("isFirst", false).commit()
+            getSharedPreferences("FlutterSharedPreferences", 0).edit()
+                    .putInt("notifyId", 1).commit()
+        }
     }
 }

@@ -25,15 +25,12 @@ class SyncJob: Job() {
         }
         todaySilences.forEach {model ->
             val isStartTimeAfterNow = Validation().checkIsTimeAfterNow(model.startTime)
-            val isEndTimeAfterNow = Validation().checkIsTimeAfterNow(model.endTime)
             if (isStartTimeAfterNow) {
                 if (model.isSilent) {
                     SilenceJob().schedule(getTimeDifference(model.startTime), model.id)
                 } else {
                     VibrateJob().schedule(getTimeDifference(model.startTime), model.id)
                 }
-            }
-            if (isEndTimeAfterNow) {
                 RingerJob().schedule(getTimeDifference(model.endTime), model.id)
             }
         }

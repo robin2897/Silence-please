@@ -36,37 +36,10 @@ class AboutPage extends StatelessWidget {
                         .body1
                         .copyWith(fontSize: 16.0),
                   ),
-                  new Material(
-                    color: Colors.transparent,
-                    child: new Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: new InkWell(
-                          child: new RawMaterialButton(
-                            child: new Text(
-                              "@Github",
-                              style: Theme
-                                  .of(context)
-                                  .textTheme
-                                  .body1
-                                  .copyWith(fontSize: 16.0),
-                            ),
-                            onPressed: () => _launchUrl("https://github.com"),
-                          ),
-                          onTap: () => {},
-                        )),
-                  )
                 ],
               ),
             )
           ],
         ));
-  }
-
-  _launchUrl(String goto) async {
-    if (await canLaunch(goto)) {
-      await launch(goto);
-    } else {
-      throw 'Could not launch $goto';
-    }
   }
 }

@@ -83,44 +83,7 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
                     isActive: true,
                     isSilent: true,
                     isVibrate: false);
-                if(Validator().checkIsEndTimeGreatorThanStartTime(model)) {  
-                  if(Validator().checkTimesIsNotConflictingWithOther(model)) {                    
-                    viewModel.addAction(model);
-                    widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
-                      content: new Text(
-                        message,
-                        style: Theme
-                            .of(context)
-                            .textTheme
-                            .body1
-                            .copyWith(fontSize: 16.0),
-                      ),
-                    ));
-                  } else {
-                    widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
-                      content: new Text(
-                        "Time is conflicting with other",
-                        style: Theme
-                            .of(context)
-                            .textTheme
-                            .body1
-                            .copyWith(fontSize: 16.0),
-                      ),
-                    ));
-                  }        
-                } else {
-                  widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
-                    content: new Text(
-                      "End time is must be greater then Start time",
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .body1
-                          .copyWith(fontSize: 16.0),
-                    ),
-                  ));
-                }
-                widget.scaffoldKey.currentState.setState(() {});
+                performAdd(model, viewModel);
                 Navigator.pop(context);
               },
             );
@@ -255,12 +218,55 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
   String get message {
     int hrs = startWhen.hour - now.hour;
     int mins = startWhen.minute - now.minute;
-    if (hrs <= 0) {
+    if (hrs <= 0 && mins < 0) {
       hrs = 24 + hrs;
-      if (mins <= 0) mins = 60 + mins;
+      mins = 60 + mins;
     } else if (hrs == 0 && mins == 0) {
       return "Silence is set for a day now";
     }
-    return "Silence is set for $hrs hrs and $mins mins from now";
+    var hours = hrs == 0 ? '' : '$hrs hrs';
+    return "Silence is set for $hours and $mins mins from now";
+  }
+
+  void performAdd(AppModel model, ViewModel viewModel) async {
+    if (Validator().checkIsEndTimeGreatorThanStartTime(model)) {
+      var value = await Validator().checkTimesIsNotConflictingWithOther(model);
+      if (value) {
+        viewModel.addAction(model);
+        widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
+          content: new Text(
+            message,
+            style: Theme
+                .of(context)
+                .textTheme
+                .body1
+                .copyWith(fontSize: 16.0),
+          ),
+        ));
+      } else {
+        widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
+          content: new Text(
+            "Time is conflicting with other",
+            style: Theme
+                .of(context)
+                .textTheme
+                .body1
+                .copyWith(fontSize: 16.0),
+          ),
+        ));
+      }
+    } else {
+      widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
+        content: new Text(
+          "End time is must be greater then Start time",
+          style: Theme
+              .of(context)
+              .textTheme
+              .body1
+              .copyWith(fontSize: 16.0),
+        ),
+      ));
+    }
+    widget.scaffoldKey.currentState.setState(() {});
   }
 }

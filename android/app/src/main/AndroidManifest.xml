@@ -15,7 +15,7 @@
     <application
         android:name=".BaseApp"
         android:label="Silence Please"
-        android:icon="@drawable/silence_logo">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
