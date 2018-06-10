@@ -5,12 +5,6 @@ import android.arch.persistence.room.Room
 import android.arch.persistence.room.RoomDatabase
 import android.arch.persistence.room.TypeConverters
 import android.content.Context
-import android.util.Log
-import io.reactivex.SingleObserver
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.observers.DisposableSingleObserver
-import io.reactivex.schedulers.Schedulers
 import java.util.*
 
 
@@ -20,7 +14,6 @@ import java.util.*
 abstract class DataDatabase : RoomDatabase() {
 
     companion object {
-        val TAG = DataDatabase::class.simpleName
         private const val DB_NAME = "main.db"
         @Volatile
         private var instance: DataDatabase? = null

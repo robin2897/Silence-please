@@ -3,8 +3,10 @@
     <words>
       <w>gson</w>
       <w>moshi</w>
+      <w>sharedpreferences</w>
       <w>silenceplease</w>
       <w>temptimetable</w>
+      <w>urllauncher</w>
     </words>
   </dictionary>
 </component>

@@ -6,6 +6,10 @@ import android.media.AudioManager
 import com.evernote.android.job.Job
 import com.evernote.android.job.JobRequest
 import com.inc.rims.silenceplease.util.NotificationHelper
+import android.support.v4.app.ActivityCompat.startActivityForResult
+import android.content.Intent
+import android.app.NotificationManager
+import android.os.Build
 
 
 class RingerJob: Job() {
@@ -15,6 +19,18 @@ class RingerJob: Job() {
 
     @SuppressLint("ApplySharedPref")
     override fun onRunJob(params: Params): Result {
+        val n = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+            if (n.isNotificationPolicyAccessGranted) {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
+            } else {
+                val intent =
+                        Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                context.startActivity(intent)
+            }
+        }
+
         val service = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
         service.ringerMode = AudioManager.RINGER_MODE_NORMAL
 

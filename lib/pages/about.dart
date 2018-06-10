@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AboutPage extends StatelessWidget {
   @override
@@ -29,7 +28,7 @@ class AboutPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   new Text(
-                    "Version: 1.0.0-alpha-1",
+                    "Version: 1.0.1-alpha1",
                     style: Theme
                         .of(context)
                         .textTheme

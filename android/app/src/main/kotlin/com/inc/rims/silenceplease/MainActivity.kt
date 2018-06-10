@@ -1,8 +1,14 @@
 package com.inc.rims.silenceplease
 
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.arch.persistence.db.SupportSQLiteQueryBuilder
+import android.content.Context
+import android.content.Intent
+import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import com.evernote.android.job.JobManager
 import com.google.gson.Gson
@@ -20,6 +26,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.SingleObserver
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -44,6 +51,7 @@ class MainActivity : FlutterActivity() {
         (application as BaseApp).getAppComponent().inject(this)
         val db = DataDatabase.getInstance(this)!!
         firstRun()
+        askPermissions()
 
         MethodChannel(flutterView, channel).setMethodCallHandler { call, result ->
             val key = call.method
@@ -261,6 +269,25 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun askPermissions() {
+        Completable.timer(3000, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    val n = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+                        if (n.isNotificationPolicyAccessGranted) {
+                            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                            audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
+                        } else {
+                            val intent =
+                                    Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                            startActivity(intent)
+                        }
+                    }
+                }
     }
 
     override fun onDestroy() {
