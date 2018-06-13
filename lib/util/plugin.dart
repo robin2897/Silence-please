@@ -10,6 +10,8 @@ import '../redux/state-manager.dart';
 
 class PluginHandShake {
   static const platform = MethodChannel("com.inc.rims.silenceplease/database");
+  static const SMS_SERVICE = "sms-service";
+  static const NOTIFICATION_POLICY = "notification-policy";
 
   Future<dynamic> insertDB({@required AppModel model}) async {
     try {
@@ -65,6 +67,25 @@ class PluginHandShake {
   void toggleEnable() async {
     try {
       await platform.invokeMethod("enableToggle");
+    } catch (e) {
+    }
+  }
+
+  Future<String> checkPermission(String permission) async {
+    try {
+      String result = await platform.invokeMethod(
+        "checkPermission", <String, dynamic>{"permission": permission}
+      );
+      print("checkPermission: $permission => $result");
+      return result;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  void redirectPermisionsSettings() async {
+    try {
+      await platform.invokeMethod("redirectPermissionSetting");
     } catch (e) {
     }
   }

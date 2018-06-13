@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/about.dart';
 import 'pages/home.dart';
 import 'pages/license.dart';
+import 'pages/settings.dart';
 import 'pages/splash.dart';
 import 'redux/state-manager.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -14,15 +15,24 @@ import 'redux/middleware.dart';
 void main() => runApp(new Application());
 
 class Application extends StatelessWidget {
+    static const SMS_SERVICE_ENABLE = "SMS_SERVICE";
+    static const SMS_SERVICE_MESSAGE = "SMS_SERVICE_MESSAGE";
+    static const SMS_SERVICE_ATTEMPTS = "SMS_SERVICE_ATTEMPTS";
+    static const SILENCE_IS_ENABLE = "IS_ENABLE";
+
   final Store<AppState> store = Store<AppState>(reducer,
       initialState: AppState.init(), middleware: [actionsMiddleware]);
 
-  void isFirstRun() async {
+  void firstRun() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     try {
       var isfirst = pref.getBool("IS_FIRST");
       if(isfirst == null) {        
-        await pref.setBool("IS_ENABLE", true);
+        await pref.setBool(SILENCE_IS_ENABLE, true);
+        await pref.setBool(SMS_SERVICE_ENABLE, false);
+        await pref.setString(SMS_SERVICE_MESSAGE, "I'm busy call me later");
+        await pref.setInt(SMS_SERVICE_ATTEMPTS, 3);
+
         await pref.setBool("IS_FIRST", false);
       }
     } catch (e) {
@@ -31,7 +41,7 @@ class Application extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    isFirstRun();
+    firstRun();
     final ThemeData _theme = new ThemeData(
         brightness: Brightness.dark,
         primaryColor: BaseColors.primary,
@@ -61,7 +71,8 @@ class Application extends StatelessWidget {
               routes: <String, WidgetBuilder>{
                 "/home": (BuildContext context) => HomePage(),
                 "/license": (BuildContext context) => LicenseScreen(),
-                "/about": (BuildContext context) => AboutPage()
+                "/about": (BuildContext context) => AboutPage(),
+                "/settings": (BuildContext context) => SettingsPage()
               },
             ),
       ),

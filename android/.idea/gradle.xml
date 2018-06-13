@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$USER_HOME$/Documents/ROBIN/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-0.4.1/android" />
-            <option value="$USER_HOME$/Documents/ROBIN/flutter/.pub-cache/hosted/pub.dartlang.org/url_launcher-3.0.1/android" />
+            <option value="$USER_HOME$/Documents/ROBIN/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-0.4.2/android" />
+            <option value="$USER_HOME$/Documents/ROBIN/flutter/.pub-cache/hosted/pub.dartlang.org/url_launcher-3.0.2/android" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
           </set>

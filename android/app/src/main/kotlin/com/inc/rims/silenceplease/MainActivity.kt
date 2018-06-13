@@ -1,22 +1,31 @@
 package com.inc.rims.silenceplease
 
-import android.annotation.SuppressLint
+import android.Manifest
+import android.app.AlarmManager
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.arch.persistence.db.SupportSQLiteQueryBuilder
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.util.Log
 import com.evernote.android.job.JobManager
 import com.google.gson.Gson
 import com.inc.rims.silenceplease.room.DataDatabase
 import com.inc.rims.silenceplease.room.DataModel
 import com.inc.rims.silenceplease.room.JsonArrayDataModel
+import com.inc.rims.silenceplease.service.BootReceiver
 import com.inc.rims.silenceplease.util.Validation
 import com.inc.rims.silenceplease.util.PerformWork
+import com.inc.rims.silenceplease.util.ServiceUtil
+import com.inc.rims.silenceplease.util.SharedPrefUtil
 import com.inc.rims.silenceplease.worker.RingerJob
 import com.inc.rims.silenceplease.worker.SilenceJob
 import com.inc.rims.silenceplease.worker.VibrateJob
@@ -26,13 +35,12 @@ import io.flutter.plugins.GeneratedPluginRegistrant
 import io.reactivex.Completable
 import io.reactivex.CompletableObserver
 import io.reactivex.SingleObserver
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-
+import kotlin.collections.ArrayList
 
 
 class MainActivity : FlutterActivity() {
@@ -44,14 +52,32 @@ class MainActivity : FlutterActivity() {
     @Inject
     lateinit var gson: Gson
 
-    @SuppressLint("ApplySharedPref")
+    companion object {
+        private const val PERMISSION_SMS_SERVICE = 1
+
+        const val SHARED_PERF_FILE = "FlutterSharedPreferences"
+        const val SHARED_PERF_CALL_SESSION_FILE = "CallSession"
+
+        const val NOTIFICATION_ID = "flutter.notifyId"
+        const val NOTIFICATION_SYNC_ID = "flutter.notifySyncId"
+        const val NOTIFICATION_ACTIVE_MODEL_UUID = "flutter.activeJobId"
+        const val FIRST_INSERT = "flutter.isFirstInsert"
+        const val IS_FIRST_RUN = "flutter.isFirst"
+
+        const val SMS_SERVICE_ENABLE = "flutter.SMS_SERVICE"
+        const val SMS_SERVICE_MESSAGE = "flutter.SMS_SERVICE_MESSAGE"
+        const val SMS_SERVICE_ATTEMPTS = "flutter.SMS_SERVICE_ATTEMPTS"
+        const val SILENCE_IS_ENABLE = "flutter.IS_ENABLE"
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         GeneratedPluginRegistrant.registerWith(this)
         (application as BaseApp).getAppComponent().inject(this)
         val db = DataDatabase.getInstance(this)!!
-        firstRun()
-        askPermissions()
+        firstLanding()
+        shouldStartBootReceiver()
 
         MethodChannel(flutterView, channel).setMethodCallHandler { call, result ->
             val key = call.method
@@ -68,13 +94,16 @@ class MainActivity : FlutterActivity() {
                             PerformWork().performJobAdd(json)
                         }
 
-                        val isFirstInsert = getSharedPreferences("FlutterSharedPreferences",
-                                0).getBoolean("isFirstInsert",
-                                true)
+                        val isFirstInsert = SharedPrefUtil().getBoolPref(this,
+                                SHARED_PERF_FILE, "isFirstInsert", true)
                         if (isFirstInsert) {
-                            PerformWork().startDailySync()
-                            getSharedPreferences("FlutterSharedPreferences", 0).edit()
-                                    .putBoolean("isFirstInsert", false).commit()
+                            PerformWork().startDailySync(this)
+                            val componentName = ComponentName(this, BootReceiver::class.java)
+                            packageManager.setComponentEnabledSetting(componentName,
+                                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                                    PackageManager.DONT_KILL_APP)
+                            SharedPrefUtil().editBoolPref(this, SHARED_PERF_FILE,
+                                    FIRST_INSERT, false)
                         }
                     }.subscribeOn(Schedulers.io())
                             .subscribe(object : CompletableObserver {
@@ -109,12 +138,12 @@ class MainActivity : FlutterActivity() {
 
                         if (old.isSilent){
                             JobManager.instance()
-                                    .cancelAllForTag("${SilenceJob.TAG}-${model.id}")
+                                    .cancelAllForTag("${SilenceJob.TAG}#${model.id}")
                         } else {
                             JobManager.instance()
-                                    .cancelAllForTag("${VibrateJob.TAG}-${model.id}")
+                                    .cancelAllForTag("${VibrateJob.TAG}#${model.id}")
                         }
-                        JobManager.instance().cancelAllForTag("${RingerJob.TAG}-${model.id}")
+                        JobManager.instance().cancelAllForTag("${RingerJob.TAG}#${model.id}")
                         if (model.isActive) {
                             if (Validation().checkTodayDayMatch(model.days)) {
                                 PerformWork().performJobAdd(json)
@@ -154,13 +183,13 @@ class MainActivity : FlutterActivity() {
                         if (Validation().checkTodayDayMatch(model.days)) {
                             if (model.isSilent) {
                                 JobManager.instance().
-                                        cancelAllForTag("${SilenceJob.TAG}-${model.id}")
+                                        cancelAllForTag("${SilenceJob.TAG}#${model.id}")
                             } else {
                                 JobManager.instance().
-                                        cancelAllForTag("${VibrateJob.TAG}-${model.id}")
+                                        cancelAllForTag("${VibrateJob.TAG}#${model.id}")
                             }
                         }
-                        JobManager.instance().cancelAllForTag("${RingerJob.TAG}-${model.id}")
+                        JobManager.instance().cancelAllForTag("${RingerJob.TAG}#${model.id}")
                     }.subscribeOn(Schedulers.io()).subscribe(
                             object : CompletableObserver {
                                 override fun onComplete() {
@@ -252,45 +281,104 @@ class MainActivity : FlutterActivity() {
                     Completable.timer(1000L, TimeUnit.MILLISECONDS)
                             .subscribeOn(Schedulers.io())
                             .subscribe {
-                                val isEnabled = getSharedPreferences(
-                                        "FlutterSharedPreferences", 0)
-                                        .getBoolean("IS_ENABLE", true)
+                                val isEnabled = SharedPrefUtil().getBoolPref(this,
+                                        SHARED_PERF_FILE, SILENCE_IS_ENABLE, true)
                                 if (!isEnabled) {
                                     JobManager.instance().cancelAll()
+                                    val componentName = ComponentName(this, BootReceiver::class.java)
+                                    packageManager.setComponentEnabledSetting(componentName,
+                                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                                            PackageManager.DONT_KILL_APP)
+                                    val id = SharedPrefUtil().getIntPref(this,
+                                            SHARED_PERF_FILE, NOTIFICATION_SYNC_ID, 0)
+                                    val intent = ServiceUtil().getServiceIndent("Silence",
+                                            "Syncing all silence",
+                                            id, this,PerformWork.PerformSyncJob::class.java)
+                                    val alarm = getSystemService(Context.ALARM_SERVICE)
+                                            as AlarmManager
+                                    alarm.cancel(alarmPendingIndent(intent))
                                 } else {
                                     val models = db.dataModelDao().getAll().blockingGet()
                                     if (models?.size != 0) {
-                                        PerformWork().startDailySync()
                                         PerformWork().performSync()
+                                        PerformWork().startDailySync(this)
                                     }
                                 }
                             }
+                }
+                "checkPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
+                        val whichPermission = call.argument<String>("permission")
+                        when (whichPermission) {
+                            "notification-policy" -> {
+                                val nManager = getSystemService(Context.NOTIFICATION_SERVICE) as
+                                        NotificationManager
+                                if (!nManager.isNotificationPolicyAccessGranted) {
+                                    result.success("denied")
+                                    val intent = Intent(
+                                            Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                                    startActivity(intent)
+                                } else {
+                                    result.success("granted")
+                                }
+                            }
+                            "sms-service" -> {
+                                val permissionPhoneState = Manifest.permission.READ_PHONE_STATE
+                                var phoneStateGranted = false
+                                val permissionSendSms = Manifest.permission.SEND_SMS
+                                var sendSmsGranted = false
+
+                                if (isPermissionGranted(permissionPhoneState)) {
+                                    phoneStateGranted = true
+                                }
+                                if (isPermissionGranted(permissionSendSms)) {
+                                    sendSmsGranted = true
+                                }
+
+                                if (!phoneStateGranted || !sendSmsGranted) {
+                                    val permissions: ArrayList<String> = arrayListOf()
+                                    if (!phoneStateGranted)
+                                        permissions.add(Manifest.permission.READ_PHONE_STATE)
+                                    if (!sendSmsGranted)
+                                        permissions.add(Manifest.permission.SEND_SMS)
+                                    ActivityCompat.requestPermissions(this,
+                                            permissions.toTypedArray(), PERMISSION_SMS_SERVICE)
+                                }
+
+                                if (!isPermissionGranted(permissionPhoneState)
+                                        || !isPermissionGranted(permissionSendSms)) {
+                                    var value = "rationale."
+                                    if(!shouldShowRequestPermissionRationale(permissionPhoneState)){
+                                        value += "1"
+                                    }
+
+                                    if(!shouldShowRequestPermissionRationale(permissionSendSms)) {
+                                        value += "2"
+                                    }
+                                    result.success(value)
+                                }
+                                result.success("granted")
+                            }
+
+                        }
+                    }
+                    else {
+                        result.success("granted")
+                    }
+                }
+                "redirectPermissionSetting" -> {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    val uri = Uri.fromParts("package", packageName, null)
+                    intent.data = uri
+                    startActivityForResult(intent, 0)
                 }
                 else -> result.notImplemented()
             }
         }
     }
 
-    private fun askPermissions() {
-        Completable.timer(3000, TimeUnit.MILLISECONDS)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    val n = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
-                        if (n.isNotificationPolicyAccessGranted) {
-                            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                            audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                        } else {
-                            val intent =
-                                    Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
-                            startActivity(intent)
-                        }
-                    }
-                }
-    }
-
     override fun onDestroy() {
+        shouldStartBootReceiver()
         for (v in disposable.values) {
             if (!v.isDisposed)
                 v.dispose()
@@ -298,15 +386,54 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
     }
 
-    @SuppressLint("ApplySharedPref")
-    private fun firstRun() {
-        val isFirst = getSharedPreferences("FlutterSharedPreferences", 0)
-                .getBoolean("isFirst", true)
-        if (isFirst) {
-            getSharedPreferences("FlutterSharedPreferences", 0).edit()
-                    .putBoolean("isFirst", false).commit()
-            getSharedPreferences("FlutterSharedPreferences", 0).edit()
-                    .putInt("notifyId", 1).commit()
+    private fun alarmPendingIndent(intent: Intent): PendingIntent {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(this, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT)
+        } else {
+            PendingIntent.getService(this, 0, intent, PendingIntent.
+                    FLAG_UPDATE_CURRENT)
+        }
+    }
+
+    private fun shouldStartBootReceiver() {
+        if (disposable.contains("shouldStartBoot")) {
+            disposable["shouldStartBoot"]?.dispose()
+        }
+        val db = DataDatabase.getInstance(this)!!
+        val calender = Calendar.getInstance()
+        calender.add(Calendar.DAY_OF_MONTH, 1)
+        disposable["shouldStartBoot"] = Completable.fromAction {
+            val list = db.getAllModelsAtParticularDay(calender[Calendar.DAY_OF_WEEK])
+            if (list.isEmpty()) {
+                val componentName = ComponentName(this, BootReceiver::class.java)
+                packageManager.setComponentEnabledSetting(componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                        PackageManager.DONT_KILL_APP)
+            } else {
+                val componentName = ComponentName(this, BootReceiver::class.java)
+                packageManager.setComponentEnabledSetting(componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP)
+            }
+        }.subscribeOn(Schedulers.io()).subscribe({
+            disposable["shouldStartBoot"]?.dispose()
+        })
+    }
+
+    private fun isPermissionGranted(permission: String): Boolean {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.
+                PERMISSION_GRANTED
+    }
+
+    private fun firstLanding() {
+        val isFirst = SharedPrefUtil().getBoolPref(this, MainActivity.SHARED_PERF_FILE,
+                IS_FIRST_RUN, true)
+        if(isFirst) {
+            SharedPrefUtil().editIntPref(this, MainActivity.SHARED_PERF_FILE,
+                    MainActivity.NOTIFICATION_ID, 1)
+            SharedPrefUtil().editBoolPref(this, MainActivity.SHARED_PERF_FILE,
+                    MainActivity.IS_FIRST_RUN, false)
         }
     }
 }

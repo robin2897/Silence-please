@@ -5,9 +5,11 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../main.dart';
 import '../model/appmodel.dart';
 import '../redux/state-manager.dart';
 import '../util/menu-controller.dart';
+import '../util/plugin.dart';
 import 'collapsible-appbar.dart';
 import 'curved-background.dart';
 import 'drop-down-scaffold.dart';
@@ -21,6 +23,20 @@ class FrontContent extends StatefulWidget {
 
 class _FrontContentState extends State<FrontContent> {
   Map<String, GlobalKey> key;
+  bool isNotificationPolicy = true;
+
+  void checkPermission() async {
+    String result = await PluginHandShake()
+        .checkPermission(PluginHandShake.NOTIFICATION_POLICY);
+    setState(() { isNotificationPolicy = result == "granted"; });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    checkPermission();
+  }
+
   @override
   Widget build(BuildContext context) {
     return new DropDownScaffoldProvider(builder: (cxt, controller, keys) {
@@ -38,15 +54,16 @@ class _FrontContentState extends State<FrontContent> {
       backgroundColor: Colors.transparent,
       elevation: 0.0,
       leading: new IconButton(
-          icon: Icon(Icons.menu), onPressed: () { 
+          icon: Icon(Icons.menu),
+          onPressed: () {
             controller.toggle();
             setState(() {});
           }),
     );
   }
 
-  Widget homeScreen(MenuController controller, 
-  Map<String, GlobalKey<State<StatefulWidget>>> key) {
+  Widget homeScreen(MenuController controller,
+      Map<String, GlobalKey<State<StatefulWidget>>> key) {
     return new Container(
         color: Color(0xFFEEEEEE),
         child: new Stack(
@@ -56,53 +73,76 @@ class _FrontContentState extends State<FrontContent> {
             new Scaffold(
               key: key["scaffold_key"],
               appBar: appbar(context: context, controller: controller),
-              floatingActionButton:
-                  new FloatingAction(scaffoldKey: key["scaffold_key"]),
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.centerFloat,
-              body: new FutureBuilder(
-                future: getIsEnable(),
-                builder: (cxt, snap) {
-                  switch(snap.connectionState) {
-                    case ConnectionState.done: 
-                      var value = snap.data;
-                      if(value) {
-                        return new StoreConnector<AppState, List<AppModel>>(
-                          converter: (store) => store.state.items,
-                          builder: (cxt, viewModel) {
-                            Widget child = viewModel.length == 0
-                                ? new Center(
-                                    child: new FractionallySizedBox(
-                                        heightFactor: 0.5,
-                                        widthFactor: 0.5,
-                                        child: new Image.asset("assets/image/robo.png")),
-                                  )
-                                : new NestedScrollView(
-                                    headerSliverBuilder: (cxt, innerBoxIsScrolled) {
-                                      return <Widget>[new CollapsibleAppbar()];
-                                    },
-                                    body: TimeList(),
-                                  );
-                            return child;
-                          },
-                        );
-                      } else {
-                        return new Container(
-                          alignment: Alignment.topCenter,
-                          margin: const EdgeInsets.only(top: 10.0),
-                          child: new Text(
-                            "Silence is disabled \n Enable it from settings",
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.body1.copyWith(
-                              fontSize: 25.0
-                            ),                               
-                          ));
-                      }
-                      break;
-                    default: return new Container();
-                  }
-                },
-              ),
+              floatingActionButton: isNotificationPolicy
+                  ? new FloatingAction(scaffoldKey: key["scaffold_key"])
+                  : null,
+              floatingActionButtonLocation: isNotificationPolicy
+                  ? FloatingActionButtonLocation.centerFloat
+                  : null,
+              body: isNotificationPolicy
+                  ? new FutureBuilder(
+                      future: getIsEnable(),
+                      builder: (cxt, snap) {
+                        switch (snap.connectionState) {
+                          case ConnectionState.done:
+                            var value = snap.data;
+                            if (value) {
+                              return new StoreConnector<AppState,
+                                  List<AppModel>>(
+                                converter: (store) => store.state.items,
+                                builder: (cxt, viewModel) {
+                                  Widget child = viewModel.length == 0
+                                      ? new Center(
+                                          child: new FractionallySizedBox(
+                                              heightFactor: 0.5,
+                                              widthFactor: 0.5,
+                                              child: new Image.asset(
+                                                  "assets/image/robo.png")),
+                                        )
+                                      : new NestedScrollView(
+                                          headerSliverBuilder:
+                                              (cxt, innerBoxIsScrolled) {
+                                            return <Widget>[
+                                              new CollapsibleAppbar()
+                                            ];
+                                          },
+                                          body: TimeList(),
+                                        );
+                                  return child;
+                                },
+                              );
+                            } else {
+                              return new Container(
+                                  alignment: Alignment.topCenter,
+                                  margin: const EdgeInsets.only(top: 10.0),
+                                  child: new Text(
+                                    "Silence is disabled \n Enable it from settings",
+                                    textAlign: TextAlign.center,
+                                    style: Theme
+                                        .of(context)
+                                        .textTheme
+                                        .body1
+                                        .copyWith(fontSize: 25.0),
+                                  ));
+                            }
+                            break;
+                          default:
+                            return new Container();
+                        }
+                      },
+                    )
+                  : new Container(
+                      alignment: Alignment.topCenter,
+                      margin: const EdgeInsets.only(top: 10.0),
+                      child: new Text(
+                        "Silence is disabled \n Required NOTIFICATION POLICY ACCESS permission",
+                        textAlign: TextAlign.center,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .body1
+                            .copyWith(fontSize: 25.0),
+                      )),
             )
           ],
         ));
@@ -110,7 +150,7 @@ class _FrontContentState extends State<FrontContent> {
 
   Future<dynamic> getIsEnable() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    return pref.getBool("IS_ENABLE");
+    return pref.getBool(Application.SILENCE_IS_ENABLE);
   }
 }
 

@@ -17,11 +17,11 @@ class SyncJob: Job() {
         val db = DataDatabase.getInstance(context)!!
         val c = Calendar.getInstance()
         val todaySilences = db.getAllModelsAtParticularDay(c.get(Calendar.DAY_OF_WEEK))
-        for (x in JobManager.instance().allJobs) {
-            if (x == this) {
+        for (x in JobManager.instance().allJobRequests) {
+            if (x.jobId == params.id) {
                 continue
             }
-            x.cancel()
+            JobManager.instance().cancel(x.jobId)
         }
         todaySilences.forEach {model ->
             val isStartTimeAfterNow = Validation().checkIsTimeAfterNow(model.startTime)
@@ -34,7 +34,6 @@ class SyncJob: Job() {
                 RingerJob().schedule(getTimeDifference(model.endTime), model.id)
             }
         }
-        PerformWork().startDailySync()
         return Result.SUCCESS
     }
 

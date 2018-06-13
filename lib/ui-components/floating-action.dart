@@ -224,7 +224,7 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
     } else if (hrs == 0 && mins == 0) {
       return "Silence is set for a day now";
     }
-    var hours = hrs == 0 ? '' : '$hrs hrs';
+    var hours = hrs == 0 ? "" : '$hrs hrs';
     return "Silence is set for $hours and $mins mins from now";
   }
 

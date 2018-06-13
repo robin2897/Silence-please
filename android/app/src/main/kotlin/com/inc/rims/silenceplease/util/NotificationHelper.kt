@@ -3,6 +3,7 @@ package com.inc.rims.silenceplease.util
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Color
@@ -41,13 +42,24 @@ class NotificationHelper(base: Context): ContextWrapper(base) {
         return manager as NotificationManager
     }
 
-    fun getSilenceMessageChannel(title: String, body: String): NotificationCompat.Builder {
+    fun getNormalNotification(title: String, body: String): NotificationCompat.Builder {
         return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
+    }
+
+    fun getActionNotification(title: String, body: String,
+                              indent: PendingIntent, icon: Int, buttonTitle: String):
+            NotificationCompat.Builder {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .addAction(icon, buttonTitle, indent)
     }
 
     fun getManagerCompat(): NotificationManagerCompat {

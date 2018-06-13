@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../main.dart';
 import '../util/fonts-colors.dart';
 import '../util/menu-controller.dart';
 import '../util/plugin.dart';
@@ -86,11 +87,12 @@ class _MenuScreenState extends State<MenuScreen>
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        // menuItem(
-        //     label: "Setting",
-        //     onTap: () {
-        //       controller.close();
-        //     }),
+        menuItem(
+            label: "Settings",
+            onTap: () {
+              controller.close();              
+              Navigator.pushNamed(context, "/settings");
+            }),
         menuItem(
             label: "About",
             onTap: () {
@@ -215,7 +217,7 @@ class _MenuScreenState extends State<MenuScreen>
 
   void saveEnableDisableSetting({bool value}) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.setBool("IS_ENABLE", value);
+    await pref.setBool(Application.SILENCE_IS_ENABLE, value);
     PluginHandShake().toggleEnable();
   }
 }
