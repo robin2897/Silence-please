@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:silence_please/config/config.dart';
 
 import '../main.dart';
 import '../model/appmodel.dart';
@@ -114,9 +115,9 @@ class _FrontContentState extends State<FrontContent> {
                             } else {
                               return new Container(
                                   alignment: Alignment.topCenter,
-                                  margin: const EdgeInsets.only(top: 10.0),
+                                  margin: const EdgeInsets.only(top: 18.0),
                                   child: new Text(
-                                    "Silence is disabled \n Enable it from settings",
+                                    "Silence is disabled \n Enable it from dropdown menu",
                                     textAlign: TextAlign.center,
                                     style: Theme
                                         .of(context)
@@ -150,7 +151,7 @@ class _FrontContentState extends State<FrontContent> {
 
   Future<dynamic> getIsEnable() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    return pref.getBool(Application.SILENCE_IS_ENABLE);
+    return pref.getBool(AppConfig.SILENCE_IS_ENABLE);
   }
 }
 

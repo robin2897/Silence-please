@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:silence_please/config/config.dart';
+import 'package:silence_please/main.dart';
 
 class AboutPage extends StatelessWidget {
   @override
@@ -28,13 +30,24 @@ class AboutPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   new Text(
-                    "Version: 1.0.1-alpha1",
+                    AppConfig.VERSION,
                     style: Theme
                         .of(context)
                         .textTheme
                         .body1
                         .copyWith(fontSize: 16.0),
                   ),
+                  new Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6.0),
+                    child: new Text(
+                      "Created by: RIMS",
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .body1
+                          .copyWith(fontSize: 16.0),
+                    ),
+                  )
                 ],
               ),
             )

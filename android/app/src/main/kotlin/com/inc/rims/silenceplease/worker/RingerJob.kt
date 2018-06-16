@@ -5,8 +5,6 @@ import android.media.AudioManager
 import com.evernote.android.job.Job
 import com.evernote.android.job.JobRequest
 import android.content.Intent
-import android.app.NotificationManager
-import android.os.Build
 import android.support.v4.content.LocalBroadcastManager
 import com.inc.rims.silenceplease.MainActivity
 import com.inc.rims.silenceplease.service.ForeService
@@ -29,7 +27,7 @@ class RingerJob: Job() {
     }
 
     private fun closeRunningForeService() {
-        val intent = Intent(ForeService.STOP_BROADCAST_ACTION)
+        val intent = Intent(ForeService.STOP_SERVICE_ACTION)
         intent.addCategory(Intent.CATEGORY_DEFAULT)
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
     }

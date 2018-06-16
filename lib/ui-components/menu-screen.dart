@@ -1,9 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:silence_please/config/config.dart';
 
-import '../main.dart';
 import '../util/fonts-colors.dart';
 import '../util/menu-controller.dart';
 import '../util/plugin.dart';
@@ -42,7 +40,7 @@ class _MenuScreenState extends State<MenuScreen>
                     break;
                 }
               });
-    getEnableStatus().then((value) => setState(() => enableStatus = value));
+    getEnableStatus();
   }
 
   @override
@@ -51,9 +49,13 @@ class _MenuScreenState extends State<MenuScreen>
     super.dispose();
   }
 
-  Future<bool> getEnableStatus() async {
+  void getEnableStatus() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    return pref.getBool("ISENABLE");
+    var result = pref.getBool(AppConfig.SILENCE_IS_ENABLE);
+    setState(() {
+      enableStatus = result;
+      enableStatus? _aController.forward(): _aController.reverse();
+    });
   }
 
   @override
@@ -100,7 +102,7 @@ class _MenuScreenState extends State<MenuScreen>
               Navigator.pushNamed(context, "/about");
             }),
         menuItem(
-            label: "Open Source Licenses",
+            label: "Licenses",
             onTap: () {
               controller.close();
               Navigator.pushNamed(context, "/license");
@@ -217,7 +219,7 @@ class _MenuScreenState extends State<MenuScreen>
 
   void saveEnableDisableSetting({bool value}) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.setBool(Application.SILENCE_IS_ENABLE, value);
+    await pref.setBool(AppConfig.SILENCE_IS_ENABLE, value);
     PluginHandShake().toggleEnable();
   }
 }

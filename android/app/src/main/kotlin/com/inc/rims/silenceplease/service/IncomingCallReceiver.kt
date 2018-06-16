@@ -5,50 +5,113 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.Ringtone
+import android.media.RingtoneManager
 import android.os.Build
 import android.support.v4.content.ContextCompat
-import android.telephony.PhoneStateListener
 import android.telephony.SmsManager
 import android.telephony.TelephonyManager
+import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.inc.rims.silenceplease.MainActivity
 import com.inc.rims.silenceplease.util.NotificationHelper
 import com.inc.rims.silenceplease.util.SharedPrefUtil
 
-class IncomingCallReceiver: BroadcastReceiver() {
+class IncomingCallReceiver : BroadcastReceiver() {
+
+    companion object {
+        private var lastState: Int = -1
+    }
+
+    private val ringUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+    private var ringtone: Ringtone? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent!!.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
             val bundle = intent.extras
-            val state = bundle.getString(TelephonyManager.EXTRA_STATE)
+            val telephonyManager = context!!.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            val curState = telephonyManager.callState
 
-            when (state) {
-                TelephonyManager.EXTRA_STATE_RINGING -> {
-                    val incomingNumber = bundle.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
-                    if (checkNumberAlreadyCall(context!!, incomingNumber!!)) {
-                        val cur = getLongPref(context, incomingNumber)
+            if (lastState != curState) {
+                lastState = curState
 
-                        if (cur == getLongPrefFromMain(context, MainActivity.SMS_SERVICE_ATTEMPTS)){
-                            val message = getStringPrefFromMain(context, MainActivity.SMS_SERVICE_MESSAGE)
+                if (ringtone == null) {
+                    ringtone = RingtoneManager.getRingtone(context, ringUri)
+                }
 
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                val permissionSendSms = Manifest.permission.SEND_SMS
-                                if (checkPermission(context, permissionSendSms)) {
-                                    sendSms(incomingNumber, message)
-                                } else {
-                                    val helper = NotificationHelper(context)
-                                    val nBuild = helper.getNormalNotification(
-                                            "Silence please",
-                                            "Unable to send sms. Permission not granted")
-                                    val id = getIntPrefFromMain(context, MainActivity.NOTIFICATION_ID)
-                                    helper.getManagerCompat().notify(id, nBuild.build())
+                when (curState) {
+                    TelephonyManager.CALL_STATE_RINGING -> {
+                        val incomingNumber = bundle.getString(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                        if (getBoolPrefFromMain(context, MainActivity.SMS_SERVICE_ENABLE)) {
+                            if (checkNumberAlreadyCall(context, incomingNumber!!)) {
+                                val cur = getLongPref(context, incomingNumber)
+
+                                if (cur == getLongPrefFromMain(context, MainActivity.SMS_SERVICE_ATTEMPTS)) {
+                                    val message = getStringPrefFromMain(context, MainActivity.SMS_SERVICE_MESSAGE)
+
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                        val permissionSendSms = Manifest.permission.SEND_SMS
+                                        if (checkPermission(context, permissionSendSms)) {
+                                            sendSms(incomingNumber, message)
+                                        } else {
+                                            val helper = NotificationHelper(context)
+                                            val nBuild = helper.getNormalNotification(
+                                                    "Silence please",
+                                                    "Unable to send sms. Permission not granted")
+                                            val id = getIntPrefFromMain(context, MainActivity.NOTIFICATION_ID)
+                                            helper.getManagerCompat().notify(id, nBuild.build())
+                                        }
+                                    } else {
+                                        sendSms(incomingNumber, message)
+                                    }
                                 }
+                                // assumption that number start with 1 not with 0
+                                editLongPref(context, incomingNumber, cur + 2)
                             } else {
-                                sendSms(incomingNumber, message)
+                                editLongPref(context, incomingNumber, 1)
                             }
                         }
-                        editLongPref(context, incomingNumber, cur + 1)
-                    } else {
-                        editLongPref(context, incomingNumber, 1)
+                        if (getBoolPrefFromMain(context, MainActivity.WHITE_LIST_SERVICE)) {
+                            val result = SharedPrefUtil().all(context, MainActivity.SHARED_PERF_WHITE_LIST_FILE)
+                            if (!result.isEmpty()) {
+                                val phoneUtil = PhoneNumberUtil.getInstance()!!
+                                var matched = false
+                                for (x in result.values) {
+                                    val match = phoneUtil.isNumberMatch((x as String), incomingNumber)
+                                    if (match == PhoneNumberUtil.MatchType.NSN_MATCH ||
+                                            match == PhoneNumberUtil.MatchType.EXACT_MATCH ||
+                                            match == PhoneNumberUtil.MatchType.SHORT_NSN_MATCH) {
+                                        matched = true
+                                        break
+                                    }
+                                }
+                                if (matched) {
+                                    editBoolPrefFromMain(context, MainActivity.SILENCE_DISABLE_DUE_TO_MATCH, true)
+                                    val service = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+                                    editIntPrefFromMain(context, MainActivity.RINGER_STATE, service.ringerMode)
+                                    service.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                                    if (ringtone != null && !ringtone!!.isPlaying) {
+                                        ringtone?.play()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    TelephonyManager.CALL_STATE_IDLE -> {
+                        if (getBoolPrefFromMain(context, MainActivity.SILENCE_DISABLE_DUE_TO_MATCH)) {
+                            if (ringtone != null && ringtone!!.isPlaying) {
+                                ringtone?.stop()
+                            }
+                            val service = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+                            service.ringerMode = getIntPrefFromMain(context, MainActivity.RINGER_STATE)
+                            editBoolPrefFromMain(context, MainActivity.SILENCE_DISABLE_DUE_TO_MATCH,
+                                    false)
+                        }
+                    }
+                    TelephonyManager.CALL_STATE_OFFHOOK -> {
+                        if (ringtone != null && ringtone!!.isPlaying) {
+                            ringtone?.stop()
+                        }
                     }
                 }
             }
@@ -81,6 +144,16 @@ class IncomingCallReceiver: BroadcastReceiver() {
                 0)
     }
 
+    private fun editIntPrefFromMain(context: Context, key: String, value: Int) {
+        SharedPrefUtil().editIntPref(context, MainActivity.SHARED_PERF_FILE, key,
+                value)
+    }
+
+    private fun editBoolPrefFromMain(context: Context, key: String, value: Boolean) {
+        SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
+                value)
+    }
+
     private fun getLongPrefFromMain(context: Context, key: String): Long {
         return SharedPrefUtil().getLongPref(context, MainActivity.SHARED_PERF_FILE, key,
                 0L)
@@ -91,7 +164,12 @@ class IncomingCallReceiver: BroadcastReceiver() {
                 "")
     }
 
-    fun checkNumberAlreadyCall(context: Context, incomingNumber: String): Boolean {
+    private fun getBoolPrefFromMain(context: Context, key: String): Boolean {
+        return SharedPrefUtil().getBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
+                false)
+    }
+
+    private fun checkNumberAlreadyCall(context: Context, incomingNumber: String): Boolean {
         return context.getSharedPreferences(MainActivity.SHARED_PERF_CALL_SESSION_FILE, 0)
                 .contains(incomingNumber)
     }

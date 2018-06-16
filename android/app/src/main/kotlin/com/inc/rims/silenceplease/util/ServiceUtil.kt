@@ -31,6 +31,10 @@ class ServiceUtil {
         if (isAction) {
             SharedPrefUtil().editStringPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.NOTIFICATION_ACTIVE_MODEL_UUID, ref)
+            SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE,
+                    MainActivity.IS_SILENCE_ACTIVE, true)
+            SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE,
+                    MainActivity.SILENCE_DISABLE_DUE_TO_MATCH, false)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(startForeService)
@@ -55,6 +59,8 @@ class ServiceUtil {
         if (isAction) {
             val ref = SharedPrefUtil().getStringPref(service, MainActivity.SHARED_PERF_FILE,
                     MainActivity.NOTIFICATION_ACTIVE_MODEL_UUID, "")
+            SharedPrefUtil().editBoolPref(service, MainActivity.SHARED_PERF_FILE,
+                    MainActivity.IS_SILENCE_ACTIVE, false)
             JobManager.instance().cancelAllForTag("${RingerJob.TAG}#$ref")
             SharedPrefUtil().clear(service, MainActivity.SHARED_PERF_CALL_SESSION_FILE)
             val audio = (service.getSystemService(Context.AUDIO_SERVICE) as AudioManager)

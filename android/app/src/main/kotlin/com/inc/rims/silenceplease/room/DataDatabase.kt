@@ -8,7 +8,7 @@ import android.content.Context
 import java.util.*
 
 
-@Database(entities = [(DataModel::class)], version = 3,
+@Database(entities = [DataModel::class], version = 3,
         exportSchema = false)
 @TypeConverters(DaysListConverter::class)
 abstract class DataDatabase : RoomDatabase() {

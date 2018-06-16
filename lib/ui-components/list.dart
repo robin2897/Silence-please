@@ -33,27 +33,3 @@ class TimeListState extends State<TimeList> {
     );
   }
 }
-
-class OopsListItem extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return new Theme(
-      data: Theme
-          .of(context)
-          .copyWith(brightness: Brightness.light, cardColor: Colors.white),
-      child: new Card(
-        shape: new RoundedRectangleBorder(
-            borderRadius: new BorderRadius.circular(20.0)),
-        elevation: 6.0,
-        margin: const EdgeInsets.symmetric(horizontal: 10.0),
-        child: new Center(
-          child: new Image.asset(
-            "assets/image/oops.png",
-            width: 100.0,
-            height: 100.0,
-          ),
-        ),
-      ),
-    );
-  }
-}

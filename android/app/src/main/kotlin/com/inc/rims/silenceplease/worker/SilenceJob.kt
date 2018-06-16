@@ -59,7 +59,7 @@ class SilenceJob: Job() {
     }
 
     private fun closeRunningForeService() {
-        val intent = Intent(ForeService.STOP_BROADCAST_ACTION)
+        val intent = Intent(ForeService.STOP_SERVICE_ACTION)
         intent.addCategory(Intent.CATEGORY_DEFAULT)
         context.sendBroadcast(intent)
     }

@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
+import 'package:silence_please/config/config.dart';
 
-import '../main.dart';
 import '../util/plugin.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -14,16 +15,20 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   static const DEFAULT_MESSAGE = 0;
   static const DEFAULT_ATTEMPTS = 1;
+  bool isServiceDisable = true;
 
   bool enableSmsService = false;
+  bool enableWhiteListService = false;
+
   String defaultSms = "";
   String defaultAttempts = "";
 
-  bool enableLocationService = false;
+  EventChannel eventChannel = PluginHandShake.serviceEventChannel;
 
   @override
   void initState() {
     super.initState();
+    eventChannel.receiveBroadcastStream().listen(_onServiceStatusChange) ;
     getHelpers();
   }
 
@@ -40,48 +45,119 @@ class _SettingsPageState extends State<SettingsPage> {
           return new Theme(
             data: Theme.of(context).copyWith(brightness: Brightness.light),
             child: new ListView(
-              padding: const EdgeInsets.only(top: 5.0),
               children: <Widget>[
-                new ExpansionTile(
-                  title: new ListTile(
-                    title: new Text(
-                      "Enable SMS Service",
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .button
-                          .copyWith(color: Colors.black, fontSize: 18.0),
+                new Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: new ExpansionTile(
+                    title: new ListTile(
+                      title: new Text(
+                        "Enable SMS Service",
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .button
+                            .copyWith(color: Colors.black, fontSize: 18.0),
+                      ),
+                      subtitle: new Text(
+                          "Send SMS to caller to notify them you are not available " +
+                              "\n\nNote this service is required a phone state and send sms permissions"),
                     ),
-                    subtitle: new Text(
-                        "When your is on silent or vibrate by this app then default sms is " +
-                            "send to a caller after default repeated calls \n\nNote this service is required a phone " +
-                            "state and send sms permissions"),
+                    children: <Widget>[
+                      isServiceDisable?
+                        new CheckboxListTile(
+                          value: enableSmsService,
+                          onChanged: isServiceDisable? (value) {
+                            setState(() {
+                              toggleSmsService(value);
+                            });
+                          }: null,
+                          title: new Text("Enable service"),
+                          subtitle: new Text(
+                            "Enable sms service"
+                          ),
+                        )
+                      :
+                        new ListTile(
+                          title: new Text("Enable service"),
+                          subtitle: new Text(
+                          "You cannot change it when silence is active"
+                          )
+                        )
+                      ,
+                      new ListTile(
+                        title: new Text("Change default sms"),
+                        subtitle: new Text(defaultSms),
+                        onTap: () => showInputSettingDialog(
+                            context: context, which: DEFAULT_MESSAGE),
+                      ),
+                      new ListTile(
+                        title: new Text("Change default call attempts"),
+                        subtitle: new Text(defaultAttempts),
+                        onTap: () => showInputSettingDialog(
+                            context: context, which: DEFAULT_ATTEMPTS),
+                      ),
+                    ],
                   ),
-                  children: <Widget>[
-                    new CheckboxListTile(
-                      value: enableSmsService,
-                      onChanged: (value) {
-                        setState(() {
-                          toggleSmsService(value);
-                        });
-                      },
-                      title: new Text("Enable service"),
-                      subtitle: new Text("Enable sms service"),
-                    ),
-                    new ListTile(
-                      title: new Text("Change default sms"),
-                      subtitle: new Text(defaultSms),
-                      onTap: () => showInputSettingDialog(
-                          context: context, which: DEFAULT_MESSAGE),
-                    ),
-                    new ListTile(
-                      title: new Text("Change default call attempts"),
-                      subtitle: new Text(defaultAttempts),
-                      onTap: () => showInputSettingDialog(
-                          context: context, which: DEFAULT_ATTEMPTS),
-                    ),
-                  ],
                 ),
+                new Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: new ExpansionTile(
+                    title: new ListTile(
+                      title: new Text(
+                        "Enable White List Service",
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .button
+                            .copyWith(color: Colors.black, fontSize: 18.0),
+                      ),
+                      subtitle: new Text(
+                          "Ring my phone when white listed phone number contact me" +
+                          "\n\nNote this service is required a read contact, phone state " +
+                          "and read external storage(to get your default ringtone) permissions"),
+                    ),
+                    children: <Widget>[
+                      isServiceDisable?
+                        new CheckboxListTile(
+                          value: enableWhiteListService,
+                          onChanged: isServiceDisable? (value) {
+                            setState(() {
+                              toggleWhiteListService(value);
+                            });
+                          }: null,
+                          title: new Text("Enable service"),
+                          subtitle: new Text(
+                            "Enable white service service"
+                          ),
+                        )
+                      :
+                        new ListTile(
+                          title: new Text("Enable service"),
+                          subtitle: new Text(
+                          "You cannot change it when silence is active"
+                          )
+                        ),
+                      new ListTile(
+                        title: new Text("White listed contact"),
+                        onTap: () => Navigator.pushNamed(context, "/whitelist"),
+                      ),
+                    ],
+                  ),
+                ),
+                new Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: new ListTile(
+                    title: new Text("About"),
+                    onTap: () => Navigator.pushNamed(context, "/about"),
+                  ),
+                ),
+                new Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: new ListTile(
+                    title: new Text("Licenses"),
+                    onTap: () => Navigator.pushNamed(context, "/license"),
+                  ),
+                )
               ],
             ),
           );
@@ -93,10 +169,20 @@ class _SettingsPageState extends State<SettingsPage> {
   void getHelpers() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     setState(() {
-      defaultSms = pref.getString(Application.SMS_SERVICE_MESSAGE);
+      defaultSms = pref.getString(AppConfig.SMS_SERVICE_MESSAGE);
       defaultAttempts =
-          pref.getInt(Application.SMS_SERVICE_ATTEMPTS).toString();
+          pref.getInt(AppConfig.SMS_SERVICE_ATTEMPTS).toString();
+      enableSmsService = pref.getBool(AppConfig.SMS_SERVICE_ENABLE);
+      enableWhiteListService = pref.getBool(AppConfig.WHITE_LIST_SERVICE);
     });
+  }
+
+  void _onServiceStatusChange(Object event) async {
+    if (mounted) {
+      setState(() {
+        isServiceDisable = event == "service-stopped";   
+      });
+    }
   }
 
   void toggleSmsService(bool curValue) async {
@@ -104,7 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
     String result =
         await PluginHandShake().checkPermission(PluginHandShake.SMS_SERVICE);
     if (result == "granted") {
-      await pref.setBool(Application.SMS_SERVICE_ENABLE, curValue);
+      await pref.setBool(AppConfig.SMS_SERVICE_ENABLE, curValue);
       setState(() {
         enableSmsService = curValue;
       });
@@ -128,7 +214,7 @@ class _SettingsPageState extends State<SettingsPage> {
           } else if (which == "2") {
             showHelperDialog(
                 context: context,
-                text: "You havn't give me a Send SMS.\n" +
+                text: "You havn't give me a Send SMS permission.\n" +
                     "Go to Setting provide this permission");
           }
         }
@@ -136,6 +222,48 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  void toggleWhiteListService(bool curValue) async {
+    SharedPreferences pref = await SharedPreferences.getInstance();
+    String result =
+        await PluginHandShake().checkPermission(PluginHandShake.READ_CONTACT);
+    if (result == "granted") {
+      await pref.setBool(AppConfig.WHITE_LIST_SERVICE, curValue);
+      setState(() {
+        enableWhiteListService = curValue;
+      });
+    } else if (result.contains("rationale.")) {
+      var resultSplit = result.split(".");
+      if (resultSplit.length == 1) {
+      } else {
+        var which = resultSplit[1];
+        if (which == "123") {
+          showHelperDialog(
+              context: context,
+              text:
+                  "You havn't give me a Read Contact and Read Phone State permission.\n" +
+                      "Go to Setting provide those permissions");
+        } else {
+          if (which == "1") {
+            showHelperDialog(
+                context: context,
+                text: "You havn't give me a Read Phone State permission.\n" +
+                    "Go to Setting provide this permission");
+          } else if (which == "2") {
+            showHelperDialog(
+                context: context,
+                text: "You havn't give me a Read Contact permission.\n" +
+                    "Go to Setting provide this permission");
+          } else if (which == "3") {
+            showHelperDialog(
+                context: context,
+                text: "You havn't give me a Read External Storage permission.\n" +
+                    "Go to Setting provide this permission");
+          }
+        }
+      }
+    }
+  }
+ 
   void redirect() async {
     PluginHandShake().redirectPermisionsSettings();
   }
@@ -182,12 +310,12 @@ class _SettingsPageState extends State<SettingsPage> {
   void updatePref(String value, which) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     if (which == _SettingsPageState.DEFAULT_MESSAGE) {
-      await pref.setString(Application.SMS_SERVICE_MESSAGE, value);
+      await pref.setString(AppConfig.SMS_SERVICE_MESSAGE, value);
       setState(() {
         getHelpers();
       });
     } else if (which == _SettingsPageState.DEFAULT_ATTEMPTS) {
-      await pref.setInt(Application.SMS_SERVICE_ATTEMPTS, int.parse(value));
+      await pref.setInt(AppConfig.SMS_SERVICE_ATTEMPTS, int.parse(value));
       setState(() {
         getHelpers();
       });

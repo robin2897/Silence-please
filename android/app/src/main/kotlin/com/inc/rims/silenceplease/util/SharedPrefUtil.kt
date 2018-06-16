@@ -41,4 +41,12 @@ class SharedPrefUtil {
     fun clear(context: Context, file: String) {
         context.getSharedPreferences(file, 0).edit().clear().commit()
     }
+
+    fun remove(context: Context, file: String, key: String) {
+        context.getSharedPreferences(file, 0).edit().remove(key).commit()
+    }
+
+    fun all(context: Context, file: String): Map<String, *> {
+        return context.getSharedPreferences(file, 0).all
+    }
 }
