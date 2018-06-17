@@ -281,16 +281,16 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             children: <Widget>[
               new Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.fromLTRB(24.0, 10.0, 24.0, 0.0),
                 child: new Text(text,
                     style: Theme
                         .of(context)
                         .textTheme
                         .button
-                        .copyWith(fontSize: 15.0)),
+                        .copyWith(fontSize: 16.0)),
               ),
               new Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.only(right: 24.0),
                 child: new Align(
                   alignment: Alignment.centerRight,
                   child: new FlatButton(
@@ -300,7 +300,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             .of(context)
                             .textTheme
                             .body1
-                            .copyWith(fontSize: 18.0),
+                            .copyWith(fontSize: 16.0),
                       ),
                       onPressed: () {
                         redirect();

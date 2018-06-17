@@ -25,6 +25,8 @@ class LicenseScreen extends StatelessWidget {
         "https://developer.android.com/topic/libraries/architecture/room"),
     new LicenseModel("android-job",
         "https://github.com/evernote/android-job/blob/master/LICENSE"),
+    new LicenseModel("libphonenumber",
+        "https://github.com/googlei18n/libphonenumber/blob/master/LICENSE"),
   ];
 
   @override

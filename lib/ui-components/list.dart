@@ -17,14 +17,14 @@ class TimeListState extends State<TimeList> {
   @override
   Widget build(BuildContext context) {
     return new KeyProvider(
-      builder: (cxt, keys) {
+      builder: (context, keys) {
         return new StoreConnector<AppState, List<AppModel>>(
             converter: (store) => store.state.items,
             distinct: true,
-            builder: (cxt, viewModel) {
+            builder: (context, viewModel) {
               return new ListView.builder(
                 itemCount: viewModel.length,
-                itemBuilder: (cxt, cIndex) => new SingleListItem(
+                itemBuilder: (context, cIndex) => new SingleListItem(
                       currIndex: cIndex,
                     ),
               );

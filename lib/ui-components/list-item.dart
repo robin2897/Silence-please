@@ -27,7 +27,7 @@ class _SingleListItemState extends State<SingleListItem>
           .copyWith(brightness: Brightness.light, cardColor: Colors.white),
       child: new StoreConnector<AppState, List<AppModel>>(
         converter: (store) => store.state.items,
-        builder: (cxt, viewModel) {
+        builder: (context, viewModel) {
           int currIndex = widget.currIndex;
           AppModel currModel = viewModel[currIndex];
           TimeExtractor startExc = timeExtractor(
@@ -61,7 +61,7 @@ class _SingleListItemState extends State<SingleListItem>
                       converter: (store) => new ViewModel.update(
                           updateAction: (model) =>
                               store.dispatch(UpdateAction(model: model))),
-                      builder: (cxt, viewModel) {
+                      builder: (context, viewModel) {
                         return new Switch(
                           onChanged: (value) => setState(() {
                                 currModel.isActive = value;
@@ -89,7 +89,7 @@ class _SingleListItemState extends State<SingleListItem>
                       converter: (store) => new ViewModel.update(
                           updateAction: (model) =>
                               store.dispatch(UpdateAction(model: model))),
-                      builder: (cxt, viewModel) {
+                      builder: (context, viewModel) {
                         return new Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
@@ -231,14 +231,14 @@ class _SingleListItemState extends State<SingleListItem>
           new Expanded(
               child: new Align(
             alignment: Alignment.centerLeft,
-            child: new KeyProvider(builder: (cxt, keys) {
+            child: new KeyProvider(builder: (context, keys) {
               var scaffoldKey =
                   keys["scaffold_key"] as GlobalKey<ScaffoldState>;
               return new StoreConnector<AppState, ViewModel>(
                 converter: (store) => new ViewModel.delete(
                     deleteAction: (model, index) => store
                         .dispatch(DeleteAction(index: index, model: model))),
-                builder: (cxt, viewModel) {
+                builder: (context, viewModel) {
                   return IconButton(
                     icon: new Icon(Icons.delete),
                     onPressed: () {
@@ -268,7 +268,7 @@ class _SingleListItemState extends State<SingleListItem>
                 converter: (store) => new ViewModel.update(
                     updateAction: (model) =>
                         store.dispatch(UpdateAction(model: model))),
-                builder: (cxt, viewModel) {
+                builder: (context, viewModel) {
                   return new DropdownButton(
                     items: [
                       dropDownMenuItem(

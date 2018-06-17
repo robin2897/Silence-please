@@ -49,7 +49,7 @@ class _FrontContentState extends State<FrontContent> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      setState(() {});
+      setState(() {checkPermission();});
     }
   }
 

@@ -66,7 +66,7 @@ class Application extends StatelessWidget {
       child: new StoreConnector<AppState, void>(
         onInit: (store) => store.dispatch(InitiateAction()),
         converter: (store) => {},
-        builder: (cxt, _) => new MaterialApp(
+        builder: (context, _) => new MaterialApp(
               title: 'Silence please',
               theme: _theme,
               home: new SplashPage(),

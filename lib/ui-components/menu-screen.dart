@@ -61,7 +61,7 @@ class _MenuScreenState extends State<MenuScreen>
   Widget build(BuildContext context) {
     enableStatus ? _aController.forward() : null;
     return new DropDownScaffoldProvider(
-      builder: (cxt, menu, keys) {
+      builder: (context, menu, keys) {
         return new Container(
           decoration: new BoxDecoration(color: BaseColors.primaryDark),
           child: new Material(

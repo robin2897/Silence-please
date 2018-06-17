@@ -54,7 +54,7 @@ class NextSilenceState extends State<NextSilence> {
   Widget build(BuildContext context) {
     return new FutureBuilder(
       future: currentValue(),
-      builder: (cxt, snapshot) {
+      builder: (context, snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.done:
             var data = snapshot.data;
