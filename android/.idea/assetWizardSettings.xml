@@ -8,6 +8,17 @@
             <PersistentState>
               <option name="children">
                 <map>
+                  <entry key="confirmationStep">
+                    <value>
+                      <PersistentState>
+                        <option name="values">
+                          <map>
+                            <entry key="resourceDirectory" value="paid" />
+                          </map>
+                        </option>
+                      </PersistentState>
+                    </value>
+                  </entry>
                   <entry key="imageAssetPanel">
                     <value>
                       <PersistentState>
@@ -20,7 +31,7 @@
                                     <map>
                                       <entry key="assetType" value="IMAGE" />
                                       <entry key="iconShape" value="NONE" />
-                                      <entry key="imageAsset" value="C:\Users\rahul\IdeaProjects\silence_please\android\app\src\main\res\drawable-xxxhdpi\silence_logo.png" />
+                                      <entry key="imageAsset" value="C:\Users\rahul\Documents\ROBIN\Art\silence asset\drawable-xxxhdpi\icon-free.png" />
                                     </map>
                                   </option>
                                 </PersistentState>

@@ -25,8 +25,13 @@ class Application extends StatelessWidget {
       if (isfirst == null) {
         await pref.setBool(AppConfig.SILENCE_IS_ENABLE, true);
         await pref.setBool(AppConfig.SMS_SERVICE_ENABLE, false);
-        await pref.setString(
+        if (AppConfig.flavor == Flavor.PAID) {
+          await pref.setString(
             AppConfig.SMS_SERVICE_MESSAGE, "I'm busy call me later");
+        } else {
+          await pref.setString(
+            AppConfig.SMS_SERVICE_MESSAGE, "I'm busy call me later"+ AppConfig.WATERMARK);
+        }        
         await pref.setInt(AppConfig.SMS_SERVICE_ATTEMPTS, 3);
         await pref.setBool(AppConfig.IS_SILENCE_ACTIVE, false);
         await pref.setBool(AppConfig.SMS_SERVICE_ENABLE_TEMP, false);

@@ -11,7 +11,13 @@ class ViewModel {
   final UpdateItem updateAction;
   final DeleteItem deleteAction;
 
-  ViewModel.add({@required this.addAction}): deleteAction = null, updateAction = null;
-  ViewModel.update({ @required this.updateAction}): addAction = null, deleteAction = null;
-  ViewModel.delete({@required this.deleteAction}): addAction = null, updateAction = null;
+  ViewModel.add({@required this.addAction})
+      : deleteAction = null,
+        updateAction = null;
+  ViewModel.update({@required this.updateAction})
+      : addAction = null,
+        deleteAction = null;
+  ViewModel.delete({@required this.deleteAction})
+      : addAction = null,
+        updateAction = null;
 }

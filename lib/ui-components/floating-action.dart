@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:meta/meta.dart';
+import 'package:silence_please/config/config.dart';
 
 import '../model/appmodel.dart';
 import '../redux/state-manager.dart';
@@ -30,7 +31,7 @@ class FloatingAction extends StatelessWidget {
   void showAddSheet({BuildContext context}) async {
     showModalBottomSheet(
         context: context,
-        builder: (cxt) {
+        builder: (context) {
           return new _AddBottomSheet(scaffoldKey: scaffoldKey);
         });
   }
@@ -66,25 +67,43 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
               addAction: (model) => store.dispatch(AddAction(
                     model: model,
                   ))),
-          builder: (cxt, viewModel) {
-            return FloatingActionButton.extended(
-              icon: new Icon(Icons.done),
-              label: new Text("Done",
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .button
-                      .copyWith(fontSize: 15.0)),
-              onPressed: () {
-                var model = new AppModel.fromTimeOfDay(
-                    startTime: startWhen,
-                    endTime: endWhen,
-                    days: [1, 1, 1, 1, 1, 1, 1],
-                    isActive: true,
-                    isSilent: true,
-                    isVibrate: false);
-                performAdd(model, viewModel);
-                Navigator.pop(context);
+          builder: (context, viewModel) {
+            return new StoreConnector<AppState, List<AppModel>>(
+              converter: (store) => store.state.items,
+              builder: (context, listModel) {
+                return new FloatingActionButton.extended(
+                  icon: new Icon(Icons.done),
+                  label: new Text("Done",
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .button
+                          .copyWith(fontSize: 15.0)),
+                  onPressed: () {
+                    var model = new AppModel.fromTimeOfDay(
+                        startTime: startWhen,
+                        endTime: endWhen,
+                        days: [1, 1, 1, 1, 1, 1, 1],
+                        isActive: true,
+                        isSilent: true,
+                        isVibrate: false);
+                    if (AppConfig.flavor == Flavor.PAID) {
+                      performAdd(model, viewModel);
+                    } else {
+                      if (listModel.length == 6) {
+                        widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
+                          content: new Text(
+                            "Limit Reached",
+                            style: Theme.of(context).textTheme.body1.copyWith(fontSize: 16.0),
+                          ),
+                        ));
+                      } else {                      
+                        performAdd(model, viewModel);
+                      }
+                    }
+                    Navigator.pop(context);
+                  },
+                );
               },
             );
           },
@@ -218,14 +237,19 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
   String get message {
     int hrs = startWhen.hour - now.hour;
     int mins = startWhen.minute - now.minute;
-    if (hrs <= 0 && mins < 0) {
+    if ((hrs <= 0 && mins != 0)||(hrs < 0 && mins == 0)) {
       hrs = 24 + hrs;
-      mins = 60 + mins;
+      if (mins > 0) {
+        mins = 60 - mins;
+      }
     } else if (hrs == 0 && mins == 0) {
       return "Silence is set for a day now";
     }
-    var hours = hrs == 0 ? "" : '$hrs hrs';
-    return "Silence is set for $hours and $mins mins from now";
+    if (mins < 0){
+      mins = now.minute - startWhen.minute;
+    }
+    var hours = hrs == 0 ? "" : ' $hrs hrs';
+    return "Silence is set for$hours and $mins mins from now";
   }
 
   void performAdd(AppModel model, ViewModel viewModel) async {
@@ -236,22 +260,14 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
         widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
           content: new Text(
             message,
-            style: Theme
-                .of(context)
-                .textTheme
-                .body1
-                .copyWith(fontSize: 16.0),
+            style: Theme.of(context).textTheme.body1.copyWith(fontSize: 16.0),
           ),
         ));
       } else {
         widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
           content: new Text(
             "Time is conflicting with other",
-            style: Theme
-                .of(context)
-                .textTheme
-                .body1
-                .copyWith(fontSize: 16.0),
+            style: Theme.of(context).textTheme.body1.copyWith(fontSize: 16.0),
           ),
         ));
       }
@@ -259,11 +275,7 @@ class _AddBottomSheetState extends State<_AddBottomSheet> {
       widget.scaffoldKey.currentState.showSnackBar(new SnackBar(
         content: new Text(
           "End time is must be greater then Start time",
-          style: Theme
-              .of(context)
-              .textTheme
-              .body1
-              .copyWith(fontSize: 16.0),
+          style: Theme.of(context).textTheme.body1.copyWith(fontSize: 16.0),
         ),
       ));
     }

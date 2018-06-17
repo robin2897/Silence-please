@@ -6,7 +6,6 @@ import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:silence_please/config/config.dart';
 
-import '../main.dart';
 import '../model/appmodel.dart';
 import '../redux/state-manager.dart';
 import '../util/menu-controller.dart';
@@ -22,20 +21,36 @@ class FrontContent extends StatefulWidget {
   _FrontContentState createState() => new _FrontContentState();
 }
 
-class _FrontContentState extends State<FrontContent> {
+class _FrontContentState extends State<FrontContent> with WidgetsBindingObserver {
   Map<String, GlobalKey> key;
   bool isNotificationPolicy = true;
 
   void checkPermission() async {
     String result = await PluginHandShake()
         .checkPermission(PluginHandShake.NOTIFICATION_POLICY);
-    setState(() { isNotificationPolicy = result == "granted"; });
+    setState(() {
+      isNotificationPolicy = result == "granted@";
+    });
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     checkPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      setState(() {});
+    }
   }
 
   @override

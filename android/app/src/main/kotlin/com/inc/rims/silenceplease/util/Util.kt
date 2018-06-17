@@ -27,12 +27,12 @@ class Util {
     }
 
     fun firstLanding(context: Context) {
-        val isFirst = SharedPrefUtil().getBoolPref(context, MainActivity.SHARED_PERF_FILE,
+        val isFirst = SharedPrefUtil.getBoolPref(context, MainActivity.SHARED_PERF_FILE,
                 MainActivity.IS_FIRST_RUN, true)
         if(isFirst) {
-            SharedPrefUtil().editIntPref(context, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editIntPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.NOTIFICATION_ID, 1)
-            SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editBoolPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.IS_FIRST_RUN, false)
         }
     }

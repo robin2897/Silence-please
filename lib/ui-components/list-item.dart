@@ -17,8 +17,8 @@ class SingleListItem extends StatefulWidget {
   _SingleListItemState createState() => new _SingleListItemState();
 }
 
-class _SingleListItemState extends State<SingleListItem> with SingleTickerProviderStateMixin {
-
+class _SingleListItemState extends State<SingleListItem>
+    with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return new Theme(

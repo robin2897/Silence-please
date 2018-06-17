@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:silence_please/config/config.dart';
 import 'package:uuid/uuid.dart';
 
 import '../util/plugin.dart';
@@ -20,6 +22,7 @@ class _WhiteListState extends State<WhiteList> {
   List<SearchContactModel> searchList = [];
   List<WhiteListModel> whiteListedContactList = [];
   EventChannel eventChannel = PluginHandShake.contactEventChannel;
+  StreamSubscription eventSub;
 
   void handleSearchBegin() {
     ModalRoute
@@ -41,17 +44,30 @@ class _WhiteListState extends State<WhiteList> {
   }
 
   void updateSearchList(Object event) {
-    if (event != "no-data") {
-      setState(() {
-        var list = event as List<dynamic>;
-        searchList = list
-            .map((f) => new SearchContactModel.fromJson(json.decode(f)))
-            .toList();
-      });
+    if (mounted) {
+      if (event != "no-data") {
+        setState(() {
+          var list = event as List<dynamic>;
+          searchList = list
+              .map((f) => new SearchContactModel.fromJson(json.decode(f)))
+              .toList();
+        });
+      } else {
+        searchList.clear();
+      }
     }
   }
 
   void whiteListInsert(String phone) async {
+    if (AppConfig.flavor == Flavor.FREE) {
+      if (whiteListedContactList.length == 2) {
+        scaffoldKey.currentState.showSnackBar(new SnackBar(
+          content: new Text("Limit Reached",
+              style: Theme.of(context).textTheme.body1.copyWith(fontSize: 16.0)),
+        ));
+        return;
+      }
+    }
     for (var item in whiteListedContactList) {
       if (item.phone == phone) {
         scaffoldKey.currentState.showSnackBar(new SnackBar(
@@ -127,7 +143,6 @@ class _WhiteListState extends State<WhiteList> {
           onPressed: () => whiteListInsert(searchController.value.text),
         )
       ],
-      backgroundColor: Theme.of(context).canvasColor,
     );
   }
 
@@ -144,13 +159,12 @@ class _WhiteListState extends State<WhiteList> {
           tooltip: 'Search',
         ),
       ],
-      backgroundColor: Theme.of(context).canvasColor,
     );
   }
 
   Widget searchListItem(String name, String phone) {
     return new Padding(
-      padding: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(3.0),
       child: new Card(
         color: Colors.white,
         child:  new ListTile(
@@ -167,7 +181,7 @@ class _WhiteListState extends State<WhiteList> {
 
   Widget whiteListedContact(WhiteListModel model, int index) {
     return new Padding(
-      padding: const EdgeInsets.all(5.0),
+      padding: const EdgeInsets.all(3.0),
       child: new Card(
         color: Colors.white,
         child: new ListTile(
@@ -185,8 +199,14 @@ class _WhiteListState extends State<WhiteList> {
   @override
   void initState() {
     super.initState();
-    eventChannel.receiveBroadcastStream().listen(updateSearchList);
+    eventSub = eventChannel.receiveBroadcastStream().listen(updateSearchList);
     whiteListAll();
+  }
+
+  @override
+  void dispose() {
+    eventSub.cancel();
+    super.dispose();
   }
 
   @override
@@ -196,8 +216,8 @@ class _WhiteListState extends State<WhiteList> {
       appBar: isSearching ? buildSearchAppbar() : buildAppbar(),
       backgroundColor: Color(0xFFEEEEEE),
       floatingActionButton: new FloatingActionButton.extended(
-        icon: new Icon(Icons.add),
-        label: new Text("Add Phone"),
+        icon: new Icon(Icons.phone),
+        label: new Text("Add Phone Number"),
         onPressed: handleSearchBegin,
       ),
       body: new Theme(

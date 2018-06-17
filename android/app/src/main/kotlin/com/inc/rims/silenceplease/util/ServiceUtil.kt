@@ -29,11 +29,11 @@ class ServiceUtil {
         startForeService.putExtra("id", id)
 
         if (isAction) {
-            SharedPrefUtil().editStringPref(context, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editStringPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.NOTIFICATION_ACTIVE_MODEL_UUID, ref)
-            SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editBoolPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.IS_SILENCE_ACTIVE, true)
-            SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editBoolPref(context, MainActivity.SHARED_PERF_FILE,
                     MainActivity.SILENCE_DISABLE_DUE_TO_MATCH, false)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -50,19 +50,19 @@ class ServiceUtil {
         startForeService.putExtra("title", title)
         startForeService.putExtra("body", body)
         startForeService.putExtra("id", id)
-        SharedPrefUtil().editIntPref(context, MainActivity.SHARED_PERF_FILE,
+        SharedPrefUtil.editIntPref(context, MainActivity.SHARED_PERF_FILE,
                 MainActivity.NOTIFICATION_SYNC_ID, id)
         return startForeService
     }
 
     fun stopForeService(service: Service, isAction: Boolean) {
         if (isAction) {
-            val ref = SharedPrefUtil().getStringPref(service, MainActivity.SHARED_PERF_FILE,
+            val ref = SharedPrefUtil.getStringPref(service, MainActivity.SHARED_PERF_FILE,
                     MainActivity.NOTIFICATION_ACTIVE_MODEL_UUID, "")
-            SharedPrefUtil().editBoolPref(service, MainActivity.SHARED_PERF_FILE,
+            SharedPrefUtil.editBoolPref(service, MainActivity.SHARED_PERF_FILE,
                     MainActivity.IS_SILENCE_ACTIVE, false)
             JobManager.instance().cancelAllForTag("${RingerJob.TAG}#$ref")
-            SharedPrefUtil().clear(service, MainActivity.SHARED_PERF_CALL_SESSION_FILE)
+            SharedPrefUtil.clear(service, MainActivity.SHARED_PERF_CALL_SESSION_FILE)
             val audio = (service.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
             audio.ringerMode = AudioManager.RINGER_MODE_NORMAL
         }

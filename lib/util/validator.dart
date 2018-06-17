@@ -17,10 +17,11 @@ class Validator {
         var savedEndTime = _model.endTime;
         var startTime = model.startTime;
         var endTime = model.endTime;
-        if(startTime.isAfter(savedStartTime) && startTime.isBefore(savedEndTime)) {
+        if (startTime.isAfter(savedStartTime) &&
+            startTime.isBefore(savedEndTime)) {
           return false;
-        }  
-        if(endTime.isAfter(savedStartTime) && endTime.isBefore(savedEndTime)) {
+        }
+        if (endTime.isAfter(savedStartTime) && endTime.isBefore(savedEndTime)) {
           return false;
         }
       }

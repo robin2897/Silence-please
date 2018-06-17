@@ -134,4 +134,8 @@ abstract class AbstractActivity: FlutterActivity() {
             return "{\"name\": \"$name\", \"phone\":\"$phone\"}"
         }
     }
+
+    protected interface PermissionCallback {
+        fun sendResult(send: String)
+    }
 }

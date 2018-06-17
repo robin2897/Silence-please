@@ -7,7 +7,8 @@ class TimeExtractor {
   TimeExtractor({this.time, this.suffix});
 }
 
-TimeExtractor timeExtractor({@required TimeOfDay rawTime, @required BuildContext context}) {
+TimeExtractor timeExtractor(
+    {@required TimeOfDay rawTime, @required BuildContext context}) {
   String suffix = "";
   String time = rawTime.format(context);
   if (time.contains('AM') || time.contains('PM')) {

@@ -36,7 +36,7 @@ class ForeService : Service() {
                     if (intent!!.action == AudioManager.RINGER_MODE_CHANGED_ACTION) {
                         if (intent.extras.getInt(AudioManager.EXTRA_RINGER_MODE)
                                 == AudioManager.RINGER_MODE_NORMAL) {
-                            if (!SharedPrefUtil().getBoolPref(context!!, MainActivity.SHARED_PERF_FILE,
+                            if (!SharedPrefUtil.getBoolPref(context!!, MainActivity.SHARED_PERF_FILE,
                                             MainActivity.SILENCE_DISABLE_DUE_TO_MATCH, false)){
                                 val stop = Intent(ForeService.STOP_SERVICE_ACTION)
                                 stop.addCategory(Intent.CATEGORY_DEFAULT)
@@ -56,9 +56,9 @@ class ForeService : Service() {
         super.onCreate()
         localBroadcastReceiver = LocalBroadcastManager.getInstance(this)
 
-        if (SharedPrefUtil().getBoolPref(this, MainActivity.SHARED_PERF_FILE,
+        if (SharedPrefUtil.getBoolPref(this, MainActivity.SHARED_PERF_FILE,
                         MainActivity.SMS_SERVICE_ENABLE, false) ||
-                SharedPrefUtil().getBoolPref(this, MainActivity.SHARED_PERF_FILE,
+                SharedPrefUtil.getBoolPref(this, MainActivity.SHARED_PERF_FILE,
                         MainActivity.WHITE_LIST_SERVICE, false)) {
             val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
             this.registerReceiver(receiver, filter)
@@ -99,9 +99,9 @@ class ForeService : Service() {
     }
 
     override fun onDestroy() {
-        if (SharedPrefUtil().getBoolPref(this, MainActivity.SHARED_PERF_FILE,
+        if (SharedPrefUtil.getBoolPref(this, MainActivity.SHARED_PERF_FILE,
                         MainActivity.SMS_SERVICE_ENABLE, false)||
-                SharedPrefUtil().getBoolPref(this, MainActivity.SHARED_PERF_FILE,
+                SharedPrefUtil.getBoolPref(this, MainActivity.SHARED_PERF_FILE,
                         MainActivity.WHITE_LIST_SERVICE, false)) {
             this.unregisterReceiver(receiver)
         }

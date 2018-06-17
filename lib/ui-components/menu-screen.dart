@@ -8,7 +8,6 @@ import '../util/plugin.dart';
 import 'drop-down-scaffold.dart';
 
 class MenuScreen extends StatefulWidget {
-
   @override
   _MenuScreenState createState() => new _MenuScreenState();
 }
@@ -54,7 +53,7 @@ class _MenuScreenState extends State<MenuScreen>
     var result = pref.getBool(AppConfig.SILENCE_IS_ENABLE);
     setState(() {
       enableStatus = result;
-      enableStatus? _aController.forward(): _aController.reverse();
+      enableStatus ? _aController.forward() : _aController.reverse();
     });
   }
 
@@ -92,7 +91,7 @@ class _MenuScreenState extends State<MenuScreen>
         menuItem(
             label: "Settings",
             onTap: () {
-              controller.close();              
+              controller.close();
               Navigator.pushNamed(context, "/settings");
             }),
         menuItem(

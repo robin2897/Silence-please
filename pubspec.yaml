@@ -1,5 +1,5 @@
 name: silence_please
-description: Automated silencing
+description: Automated silencing app
 
 dependencies:
   flutter:
@@ -68,7 +68,6 @@ flutter:
 
   assets:
     - assets/image/splash_logo.png
-    - assets/image/oops.png
     - assets/image/robo.png
 
   fonts:

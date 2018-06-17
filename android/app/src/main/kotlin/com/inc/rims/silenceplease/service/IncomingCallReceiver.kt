@@ -72,7 +72,7 @@ class IncomingCallReceiver : BroadcastReceiver() {
                             }
                         }
                         if (getBoolPrefFromMain(context, MainActivity.WHITE_LIST_SERVICE)) {
-                            val result = SharedPrefUtil().all(context, MainActivity.SHARED_PERF_WHITE_LIST_FILE)
+                            val result = SharedPrefUtil.all(context, MainActivity.SHARED_PERF_WHITE_LIST_FILE)
                             if (!result.isEmpty()) {
                                 val phoneUtil = PhoneNumberUtil.getInstance()!!
                                 var matched = false
@@ -130,42 +130,42 @@ class IncomingCallReceiver : BroadcastReceiver() {
     }
 
     private fun editLongPref(context: Context, key: String, value: Long) {
-        SharedPrefUtil().editLongPref(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE, key,
+        SharedPrefUtil.editLongPref(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE, key,
                 value)
     }
 
     private fun getLongPref(context: Context, key: String): Long {
-        return SharedPrefUtil().getLongPref(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE, key,
+        return SharedPrefUtil.getLongPref(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE, key,
                 0L)
     }
 
     private fun getIntPrefFromMain(context: Context, key: String): Int {
-        return SharedPrefUtil().getIntPref(context, MainActivity.SHARED_PERF_FILE, key,
+        return SharedPrefUtil.getIntPref(context, MainActivity.SHARED_PERF_FILE, key,
                 0)
     }
 
     private fun editIntPrefFromMain(context: Context, key: String, value: Int) {
-        SharedPrefUtil().editIntPref(context, MainActivity.SHARED_PERF_FILE, key,
+        SharedPrefUtil.editIntPref(context, MainActivity.SHARED_PERF_FILE, key,
                 value)
     }
 
     private fun editBoolPrefFromMain(context: Context, key: String, value: Boolean) {
-        SharedPrefUtil().editBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
+        SharedPrefUtil.editBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
                 value)
     }
 
     private fun getLongPrefFromMain(context: Context, key: String): Long {
-        return SharedPrefUtil().getLongPref(context, MainActivity.SHARED_PERF_FILE, key,
+        return SharedPrefUtil.getLongPref(context, MainActivity.SHARED_PERF_FILE, key,
                 0L)
     }
 
     private fun getStringPrefFromMain(context: Context, key: String): String {
-        return SharedPrefUtil().getStringPref(context, MainActivity.SHARED_PERF_FILE, key,
+        return SharedPrefUtil.getStringPref(context, MainActivity.SHARED_PERF_FILE, key,
                 "")
     }
 
     private fun getBoolPrefFromMain(context: Context, key: String): Boolean {
-        return SharedPrefUtil().getBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
+        return SharedPrefUtil.getBoolPref(context, MainActivity.SHARED_PERF_FILE, key,
                 false)
     }
 

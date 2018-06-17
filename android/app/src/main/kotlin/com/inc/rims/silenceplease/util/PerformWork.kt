@@ -51,7 +51,7 @@ class PerformWork {
         SyncJob().schedule()
     }
 
-    private fun getNotificationId(context: Context) = SharedPrefUtil().getIntPref(context,
+    private fun getNotificationId(context: Context) = SharedPrefUtil.getIntPref(context,
             MainActivity.SHARED_PERF_FILE, MainActivity.NOTIFICATION_ID, 1)
 
     class PerformSyncJob: Service() {

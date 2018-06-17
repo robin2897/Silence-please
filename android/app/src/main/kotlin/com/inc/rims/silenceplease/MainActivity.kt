@@ -37,6 +37,7 @@ import kotlin.collections.ArrayList
 
 class MainActivity : AbstractActivity() {
     private val tag = "MainActivity"
+    private lateinit var permissionCallback: PermissionCallback
 
     companion object {
         private const val PERMISSION_SMS_SERVICE = 1
@@ -45,6 +46,7 @@ class MainActivity : AbstractActivity() {
         const val SHARED_PERF_FILE = "FlutterSharedPreferences"
         const val SHARED_PERF_CALL_SESSION_FILE = "CallSession"
         const val SHARED_PERF_WHITE_LIST_FILE = "WhiteList"
+        const val SHARED_PERF_PERMISSION_FILE = "permission"
 
         const val NOTIFICATION_ID = "flutter.notifyId"
         const val NOTIFICATION_SYNC_ID = "flutter.notifySyncId"
@@ -72,6 +74,12 @@ class MainActivity : AbstractActivity() {
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
 
         MethodChannel(flutterView, channelMethod).setMethodCallHandler { call, result ->
+            permissionCallback = object : PermissionCallback {
+                override fun sendResult(send: String) {
+                    result.success(send)
+                }
+            }
+
             val key = call.method
             when (call.method) {
                 "insertDB" -> {
@@ -86,7 +94,7 @@ class MainActivity : AbstractActivity() {
                             PerformWork().performJobAdd(json)
                         }
 
-                        val isFirstInsert = SharedPrefUtil().getBoolPref(this,
+                        val isFirstInsert = SharedPrefUtil.getBoolPref(this,
                                 SHARED_PERF_FILE, "isFirstInsert", true)
                         if (isFirstInsert) {
                             PerformWork().startDailySync(this)
@@ -94,7 +102,7 @@ class MainActivity : AbstractActivity() {
                             packageManager.setComponentEnabledSetting(componentName,
                                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                                     PackageManager.DONT_KILL_APP)
-                            SharedPrefUtil().editBoolPref(this, SHARED_PERF_FILE,
+                            SharedPrefUtil.editBoolPref(this, SHARED_PERF_FILE,
                                     FIRST_INSERT, false)
                         }
                     }.subscribeOn(Schedulers.io())
@@ -271,7 +279,7 @@ class MainActivity : AbstractActivity() {
                     Completable.timer(1000L, TimeUnit.MILLISECONDS)
                             .subscribeOn(Schedulers.io())
                             .subscribe {
-                                val isEnabled = SharedPrefUtil().getBoolPref(this,
+                                val isEnabled = SharedPrefUtil.getBoolPref(this,
                                         SHARED_PERF_FILE, SILENCE_IS_ENABLE, true)
                                 if (!isEnabled) {
                                     JobManager.instance().cancelAll()
@@ -279,7 +287,7 @@ class MainActivity : AbstractActivity() {
                                     packageManager.setComponentEnabledSetting(componentName,
                                             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                                             PackageManager.DONT_KILL_APP)
-                                    val id = SharedPrefUtil().getIntPref(this,
+                                    val id = SharedPrefUtil.getIntPref(this,
                                             SHARED_PERF_FILE, NOTIFICATION_SYNC_ID, 0)
                                     val intent = ServiceUtil().getServiceIndent("Silence",
                                             "Syncing all silence",
@@ -304,96 +312,30 @@ class MainActivity : AbstractActivity() {
                                 val nManager = getSystemService(Context.NOTIFICATION_SERVICE) as
                                         NotificationManager
                                 if (!nManager.isNotificationPolicyAccessGranted) {
-                                    result.success("denied")
+                                    result.success("denied@")
                                     val intent = Intent(
                                             Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
                                     startActivity(intent)
                                 } else {
-                                    result.success("granted")
+                                    result.success("granted@")
                                 }
                             }
                             "sms-service" -> {
                                 val permissionPhoneState = Manifest.permission.READ_PHONE_STATE
-                                var phoneStateGranted = false
                                 val permissionSendSms = Manifest.permission.SEND_SMS
-                                var sendSmsGranted = false
-
-                                if (Util().isPermissionGranted(this, permissionPhoneState)) {
-                                    phoneStateGranted = true
-                                }
-                                if (Util().isPermissionGranted(this, permissionSendSms)) {
-                                    sendSmsGranted = true
-                                }
-
-                                if (!phoneStateGranted || !sendSmsGranted) {
-                                    val permissions: ArrayList<String> = arrayListOf()
-                                    if (!phoneStateGranted)
-                                        permissions.add(Manifest.permission.READ_PHONE_STATE)
-                                    if (!sendSmsGranted)
-                                        permissions.add(Manifest.permission.SEND_SMS)
-                                    ActivityCompat.requestPermissions(this,
-                                            permissions.toTypedArray(), PERMISSION_SMS_SERVICE)
-                                }
-
-                                if (!Util().isPermissionGranted(this, permissionPhoneState)
-                                        || !Util().isPermissionGranted(this,
-                                                permissionSendSms)) {
-                                    var value = "rationale."
-                                    if (!shouldShowRequestPermissionRationale(permissionPhoneState)) {
-                                        value += "1"
-                                    }
-
-                                    if (!shouldShowRequestPermissionRationale(permissionSendSms)) {
-                                        value += "2"
-                                    }
-                                    result.success(value)
-                                } else {
-                                    result.success("granted")
-                                }
-
+                                askPermission(arrayOf(permissionPhoneState, permissionSendSms),
+                                        PERMISSION_SMS_SERVICE)
                             }
                             "contacts" -> {
                                 val permissionPhoneState = Manifest.permission.READ_PHONE_STATE
-                                var phoneStateGranted = false
                                 val permissionReadContact = Manifest.permission.READ_CONTACTS
-                                var readContactGranted = false
-
-                                if (Util().isPermissionGranted(this, permissionPhoneState)) {
-                                    phoneStateGranted = true
-                                }
-                                if (Util().isPermissionGranted(this, permissionReadContact)) {
-                                    readContactGranted = true
-                                }
-
-                                if (!phoneStateGranted || !readContactGranted) {
-                                    val permissions: ArrayList<String> = arrayListOf()
-                                    if (!phoneStateGranted)
-                                        permissions.add(permissionPhoneState)
-                                    if (!readContactGranted)
-                                        permissions.add(permissionReadContact)
-                                    ActivityCompat.requestPermissions(this,
-                                            permissions.toTypedArray(), PERMISSION_CONTACT_SERVICE)
-                                }
-
-                                if (!Util().isPermissionGranted(this, permissionPhoneState)
-                                        || !Util().isPermissionGranted(this,
-                                                permissionReadContact)) {
-                                    var value = "rationale."
-                                    if (!shouldShowRequestPermissionRationale(permissionPhoneState)) {
-                                        value += "1"
-                                    }
-
-                                    if (!shouldShowRequestPermissionRationale(permissionReadContact)) {
-                                        value += "2"
-                                    }
-                                    result.success(value)
-                                } else {
-                                    result.success("granted")
-                                }
+                                val permissionStorage = Manifest.permission.READ_EXTERNAL_STORAGE
+                                askPermission(arrayOf(permissionPhoneState, permissionReadContact,
+                                        permissionStorage), PERMISSION_CONTACT_SERVICE)
                             }
                         }
                     } else {
-                        result.success("granted")
+                        permissionCallback.sendResult("granted@")
                     }
                 }
                 "redirectPermissionSetting" -> {
@@ -416,7 +358,7 @@ class MainActivity : AbstractActivity() {
                             val phone = call.argument<String>("arg")
                             val uuid = call.argument<String>("uuid")
                             if (Patterns.PHONE.matcher(phone).matches()) {
-                                SharedPrefUtil().editStringPref(this,
+                                SharedPrefUtil.editStringPref(this,
                                         SHARED_PERF_WHITE_LIST_FILE, uuid, phone)
                                 result.success("success")
                             } else {
@@ -425,11 +367,11 @@ class MainActivity : AbstractActivity() {
                         }
                         "delete" -> {
                             val uuid = call.argument<String>("arg")
-                            SharedPrefUtil().remove(this, SHARED_PERF_WHITE_LIST_FILE, uuid)
+                            SharedPrefUtil.remove(this, SHARED_PERF_WHITE_LIST_FILE, uuid)
                             result.success("success")
                         }
                         "getAll" -> {
-                            result.success(SharedPrefUtil().all(this,
+                            result.success(SharedPrefUtil.all(this,
                                     SHARED_PERF_WHITE_LIST_FILE))
                         }
                     }
@@ -443,7 +385,7 @@ class MainActivity : AbstractActivity() {
                     var watcher: BroadcastReceiver? = null
                     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                         watcher = serviceWatcherReceiver(events!!)
-                        if (SharedPrefUtil().getBoolPref(this@MainActivity, SHARED_PERF_FILE
+                        if (SharedPrefUtil.getBoolPref(this@MainActivity, SHARED_PERF_FILE
                                         , IS_SILENCE_ACTIVE, false)) {
                             events.success("service-started")
                         } else {
@@ -490,5 +432,71 @@ class MainActivity : AbstractActivity() {
                 v.dispose()
         }
         super.onDestroy()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?,
+                                            grantResults: IntArray?) {
+        val grantedPermission = arrayListOf<String>()
+        val neverAskPermission = arrayListOf<String>()
+        if (grantResults!!.isNotEmpty()) {
+            permissions!!.forEachIndexed { index, permission ->
+                if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (!shouldShowRequestPermissionRationale(permission)) {
+                            val isFirstTime = SharedPrefUtil.getBoolPref(this,
+                                    SHARED_PERF_PERMISSION_FILE, permission, true)
+                            if (isFirstTime) {
+                                SharedPrefUtil.editBoolPref(this,
+                                        SHARED_PERF_PERMISSION_FILE, permission, false)
+                            } else {
+                               neverAskPermission.add(permission)
+                            }
+                        }
+                    }
+                } else {
+                    grantedPermission.add(permission)
+                }
+            }
+            var result = "granted@"
+            var first = true
+            grantedPermission.forEach {
+                if (first) {
+                    first = false
+                    result += it
+                } else {
+                    result += "^$it"
+                }
+            }
+            result = "|setting@"
+            first = true
+            neverAskPermission.forEach {
+                if (first) {
+                    first = false
+                    result += it
+                } else {
+                    result += "^$it"
+                }
+            }
+            permissionCallback.sendResult(result)
+        }
+    }
+
+    private fun askPermission(permissions: Array<String>, requestCode: Int) {
+        val permissionPending = arrayListOf<String>()
+        permissions.forEach {
+            if (!Util().isPermissionGranted(this, it)) {
+                permissionPending.add(it)
+            }
+        }
+        if (permissionPending.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionPending.toTypedArray(),
+                    requestCode)
+        } else {
+            var result = "granted@"
+            permissions.forEach {
+                result += "$it*"
+            }
+            permissionCallback.sendResult(result)
+        }
     }
 }

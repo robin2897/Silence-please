@@ -70,11 +70,11 @@ class SilenceJob: Job() {
                 ForeService::class.java)
     }
 
-    private fun getNotificationId() = SharedPrefUtil().getIntPref(context,
+    private fun getNotificationId() = SharedPrefUtil.getIntPref(context,
             MainActivity.SHARED_PERF_FILE, MainActivity.NOTIFICATION_ID, 1)
 
     private fun updatePref(key: String, value: Int) {
-        SharedPrefUtil().editIntPref(context, MainActivity.SHARED_PERF_FILE, key, value)
+        SharedPrefUtil.editIntPref(context, MainActivity.SHARED_PERF_FILE, key, value)
     }
 
     fun schedule(at: Long, id: String) {

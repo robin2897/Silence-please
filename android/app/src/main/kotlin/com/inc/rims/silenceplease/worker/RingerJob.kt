@@ -21,7 +21,7 @@ class RingerJob: Job() {
         val service = (context.getSystemService(Context.AUDIO_SERVICE) as AudioManager)
         service.ringerMode = AudioManager.RINGER_MODE_NORMAL
 
-        SharedPrefUtil().clear(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE)
+        SharedPrefUtil.clear(context, MainActivity.SHARED_PERF_CALL_SESSION_FILE)
         closeRunningForeService()
         return Result.SUCCESS
     }
